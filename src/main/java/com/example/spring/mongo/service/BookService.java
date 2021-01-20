@@ -13,6 +13,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class BookService {
 
@@ -22,18 +23,16 @@ public class BookService {
 		return bookRepository.findAll().switchIfEmpty(Flux.empty());
 	}
 
-	@Transactional
+
 	public Mono<Book> createUpdateResource(BookDTO bookDTO) {
 		return bookRepository.save(BookMapper.bookDtoToBookMapper(bookDTO));
 
 	}
 
-	@Transactional
 	public Mono<Book> updateResource(BookDTO bookDTO) {
 		return createUpdateResource(bookDTO);
 	}
 
-	@Transactional
 	public void deleteResource(BookDTO bookDTO) {
 		bookRepository.delete(BookMapper.bookDtoToBookMapper(bookDTO));
 	}

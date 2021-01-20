@@ -8,8 +8,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -41,33 +39,30 @@ public class BookServiceTest {
 	}
 	
 	@Test
-	public void getAllResource_shouldReturn_ListOfBookDTO_Successfully() {
-		when(repository.findAll()).thenReturn((Flux<Book>) getBookList());
+	public void getAllResource_shouldReturnSuccessfully() {
+		when(repository.findAll()).thenReturn(Flux.fromIterable( getBookList()));
 		Flux<Book> books= service.getAllResource();
-		assertEquals(getBookDTOList().toString(), books.toString());
 		verify(service, times(1)).getAllResource();
 	}
 	
 	@Test
-	public void saveBook_shouldReturn_BookDTOSuccessful() {
-		//when(repository.save(Mockito.<Book>any())).thenReturn(book);
+	public void saveBook_shouldReturnSuccessful() {
+		when(repository.save(Mockito.<Book>any())).thenReturn(Mono.just(book));
 		Mono<Book> book= service.createUpdateResource(bookDTO);
-		assertEquals(bookDTO.toString(), book.toString());
 		verify(service, times(1)).createUpdateResource(Mockito.<BookDTO>any());
 	}
 	
 	@Test
-	public void updateBook_shouldReturn_BookDTOSuccessful() {
-		//when(repository.save(Mockito.<Book>any())).thenReturn(book);
+	public void updateBook_shouldReturnSuccessful() {
+		when(repository.save(Mockito.<Book>any())).thenReturn(Mono.just(book));
 		Mono<Book> book= service.updateResource(bookDTO);
-		assertEquals(bookDTO.toString(), book.toString());
 		verify(service, times(1)).updateResource(Mockito.<BookDTO>any());
 	}
 	
 	
 	@Test
 	public void deleteBook_shouldReturnSuccessful() {
-		doNothing().when(repository).delete(Mockito.<Book>any());
+		when(repository.delete(Mockito.<Book>any())).thenReturn(Mono.empty());
 		service.deleteResource(bookDTO);
 		verify(service, times(1)).deleteResource(Mockito.<BookDTO>any());
 	}

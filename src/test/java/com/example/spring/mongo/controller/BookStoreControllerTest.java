@@ -1,101 +1,61 @@
 package com.example.spring.mongo.controller;
 
-import static com.example.spring.mongo.test.utils.TestHelper.getBookDTOList;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 import com.example.spring.mongo.dto.BookDTO;
 import com.example.spring.mongo.model.Book;
 import com.example.spring.mongo.service.BookService;
 import com.example.spring.mongo.test.utils.TestHelper;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
+ 
+@WebFluxTest(BookStoreController.class)
 public class BookStoreControllerTest {
 
-	private MockMvc mvc;
+	@Autowired
+	private WebTestClient webTestClient;
 
-	@Mock
+	@MockBean
 	private BookService bookService;
-
-	@InjectMocks
-	@Spy
-	private BookStoreController bookStoreController;
+	
 	private BookDTO bookDTO;
-	private ObjectMapper mapper;
+	private Book book;
 	@BeforeEach
 	public void setup() {
-		MockitoAnnotations.initMocks(this);
-		mvc = MockMvcBuilders.standaloneSetup(bookStoreController).build();
-		mapper = new ObjectMapper();
-		bookDTO = new BookDTO(101, "Mokito", "publisher", 15.00);
+		bookDTO = BookDTO.builder().id(101).author("test").price(10.00).name("testing").build();
+		 book = Book.builder().id(102).author("test1").name("testing1").price(12.00).build();
 	}
 
 	@Test
 	public void getBookCatalog_shouldReturnSuccessful() throws Exception {
-		when(bookService.getAllResource()).thenReturn((Flux<Book>) getBookDTOList());
-		MvcResult result = mvc.perform(get("/book/catalogue").accept(MediaType.APPLICATION_JSON))
-				.andExpect(status().is2xxSuccessful()).andReturn();
-		List<BookDTO> actual = mapper.readValue(result.getResponse().getContentAsString(),
-				new TypeReference<List<BookDTO>>() {});
-		Assertions.assertEquals(getBookDTOList().toString(), actual.toString());
-		verify(bookService, times(1)).getAllResource();
+		when(bookService.getAllResource()).thenReturn(Flux.fromIterable(TestHelper.getBookList()));
+		webTestClient.get().uri("/book/catalogue").accept(MediaType.APPLICATION_JSON).exchange().expectBodyList(Book.class).isEqualTo(TestHelper.getBookList());
 	}
 	
 	@Test
 	public void saveBook_shouldReturnSuccessful() throws Exception {
-		
-		String jsonRequestBody = mapper.writeValueAsString(bookDTO);
-		//when(bookService.createUpdateResource(Mockito.<BookDTO>any())).thenReturn(bookDTO);
-		MvcResult result = mvc.perform(post("/book/save-resource").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(jsonRequestBody))
-				.andExpect(status().is2xxSuccessful()).andReturn();
-		Assertions.assertEquals(jsonRequestBody, result.getResponse().getContentAsString());
-		verify(bookService, times(1)).createUpdateResource(Mockito.<BookDTO>any());
+		when(bookService.createUpdateResource(bookDTO)).thenReturn(Mono.just(book));
+		webTestClient.post().uri("/book/save").accept(MediaType.APPLICATION_JSON).body(Mono.just(bookDTO), BookDTO.class).exchange().expectStatus().isCreated().expectBody();
 	}
 	
-	@Test
+	
+	@Test	
 	public void updateBook_shouldReturnSuccessful() throws Exception {
-		String jsonRequestBody = mapper.writeValueAsString(bookDTO);
-		//when(bookService.updateResource(Mockito.<BookDTO>any())).thenReturn(bookDTO);
-		MvcResult result = mvc.perform(put("/book/update-resource").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(jsonRequestBody))
-				.andExpect(status().is2xxSuccessful()).andReturn();
-		Assertions.assertEquals(jsonRequestBody, result.getResponse().getContentAsString());
-		verify(bookService, times(1)).updateResource(Mockito.<BookDTO>any());
+		when(bookService.updateResource(bookDTO)).thenReturn(Mono.just(book));
+		webTestClient.put().uri("/book/update").accept(MediaType.APPLICATION_JSON).body(Mono.just(bookDTO), BookDTO .class).exchange().expectBody(Book.class).isEqualTo(book);
 	}
 	
 	@Test
 	public void deleteBook_shouldReturnSuccessful() throws Exception {
-		String jsonRequestBody = mapper.writeValueAsString(bookDTO);
-		doNothing().when(bookService).deleteResource(Mockito.<BookDTO>any());
-		MvcResult result = mvc.perform(delete("/book/delete-resource").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(jsonRequestBody))
-				.andExpect(status().is2xxSuccessful()).andReturn();
-		Assertions.assertEquals("book deleted!", result.getResponse().getContentAsString());
-		verify(bookService, times(1)).deleteResource(Mockito.<BookDTO>any());
+		webTestClient.delete().uri("/book/delete").accept(MediaType.APPLICATION_JSON).exchange().expectStatus().isOk();
 	}
 }
