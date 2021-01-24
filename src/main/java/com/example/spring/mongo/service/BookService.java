@@ -33,8 +33,13 @@ public class BookService {
 		return createUpdateResource(bookDTO);
 	}
 
-	public void deleteResource(BookDTO bookDTO) {
-		bookRepository.delete(BookMapper.bookDtoToBookMapper(bookDTO));
+	public void deleteResource(int id) {
+		bookRepository.deleteById(id);
 	}
 
+
+	public Mono<Book> getBookById(int id) {
+		return bookRepository.findById(id);
+	}
+	
 }

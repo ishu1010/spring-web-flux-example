@@ -1,9 +1,6 @@
 package com.example.spring.mongo.service;
 
-import static com.example.spring.mongo.test.utils.TestHelper.getBookDTOList;
 import static com.example.spring.mongo.test.utils.TestHelper.getBookList;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -62,8 +59,8 @@ public class BookServiceTest {
 	
 	@Test
 	public void deleteBook_shouldReturnSuccessful() {
-		when(repository.delete(Mockito.<Book>any())).thenReturn(Mono.empty());
-		service.deleteResource(bookDTO);
-		verify(service, times(1)).deleteResource(Mockito.<BookDTO>any());
+		when(repository.deleteById(0)).thenReturn(Mono.empty());
+		service.deleteResource(0);
+		verify(service, times(1)).deleteResource(0);
 	}
 }
